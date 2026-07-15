@@ -35,6 +35,10 @@ public interface CouponRepository extends JpaRepository<Coupon, Long> {
     @Query("UPDATE Coupon c SET c.couponAmount = c.couponAmount - 1 WHERE c.id = :couponId AND c.couponAmount > 0")
     int claim(@Param("couponId") Long couponId);
 
+    @Modifying
+    @Query("UPDATE Coupon c SET c.couponAmount = c.couponAmount - 1 WHERE c.id = :couponId AND c.userId = :userId AND c.couponAmount > 0")
+    int claimForUser(@Param("couponId") Long couponId, @Param("userId") Long userId);
+
     // 根据用户 ID 查询优惠券
     List<Coupon> findByUserId(Long userId);
 }

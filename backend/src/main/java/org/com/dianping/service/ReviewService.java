@@ -1,63 +1,31 @@
 package org.com.dianping.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-
 import org.com.dianping.entity.Review;
 import org.com.dianping.repository.MerchantRepository;
 import org.com.dianping.repository.ReviewRepository;
 import org.com.dianping.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 public class ReviewService {
-    private final ReviewRepository reviewRepository;    
-    private final MerchantRepository merchantRepository;
-    private final UserRepository userRepository;
-    private final CouponService couponService;
-
-    public ReviewService(ReviewRepository reviewRepository, MerchantRepository merchantRepository, UserRepository userRepository, CouponService couponService) {
-        this.reviewRepository = reviewRepository;
-        this.merchantRepository = merchantRepository;
-        this.userRepository = userRepository;
-        this.couponService = couponService;
-    }
-
-    public List<Review> getReviewsByMerchantID(Long merchantId) {
-        List<Review> reviews = reviewRepository.findByMerchantID(merchantId);
-        return reviews;
-    }
-
-    public List<Review> getReviewsByUserID(Long userId) {
-        List<Review> reviews = reviewRepository.findByUserID(userId);
-        return reviews;
-    }
-
-    public List<Review> getReviewsByParentID(Long parentId) {
-        List<Review> reviews = reviewRepository.findByParentID(parentId);
-        return reviews;
-    }
-
-    public Integer getUseFulReviewCountByUserID(Long userId) {
-        List<Review> reviews = getReviewsByUserID(userId);
-        Integer count = 0;
-        for (Review review : reviews) {
-            if (review.getComment().length() >= 15) {
-                count++;
-            }
-        }
-        return count;
-    }
-
+    private final ReviewRepository reviews;
+    private final MerchantRepository merchants;
+    private final UserRepository users;
+    private final CouponService coupons;
+    public ReviewService(ReviewRepository reviews, MerchantRepository merchants, UserRepository users, CouponService coupons) { this.reviews = reviews; this.merchants = merchants; this.users = users; this.coupons = coupons; }
+    public List<Review> getReviewsByMerchantID(Long merchantId) { return reviews.findByMerchantID(merchantId); }
+    public List<Review> getReviewsByUserID(Long userId) { return reviews.findByUserID(userId); }
+    public List<Review> getReviewsByParentID(Long parentId) { return reviews.findByParentID(parentId); }
+    @Transactional
     public void createReview(Review review) {
-        if (merchantRepository.existsById(review.getMerchantID())) {
-            if (userRepository.existsById(review.getUserID())) {
-                if(getUseFulReviewCountByUserID(review.getUserID()) == 2 && review.getComment().length() >= 15) {
-                    couponService.issueNewUserCoupons(review.getUserID(), 'E');
-                    reviewRepository.save(review);
-                }else{
-                    reviewRepository.save(review);
-                }
-            }
-        }
+        if (!merchants.existsById(review.getMerchantID())) throw new IllegalArgumentException("商家不存在");
+        if (!users.existsById(review.getUserID())) throw new IllegalArgumentException("用户不存在");
+        if (review.getComment() == null || review.getComment().isBlank()) throw new IllegalArgumentException("评论不能为空");
+        int usefulCount = (int) reviews.findByUserID(review.getUserID()).stream().filter(value -> value.getComment().length() >= 15).count();
+        review.setCreateTime(LocalDateTime.now()); reviews.save(review);
+        if (usefulCount == 2 && review.getComment().length() >= 15) coupons.issueReviewRewardCoupon(review.getUserID());
     }
-
 }

@@ -32,6 +32,7 @@ public class InvitationService {
 
     @Transactional
     public void processInvitationReward(Long inviterId, Long inviteeId, BigDecimal orderAmount) {
+        if (recordRepo.existsByUserIdAndInviteeId(inviterId, inviteeId)) return;
         // 检查订单金额是否满足要求
         if (orderAmount.compareTo(new BigDecimal("10.00")) <= 0) {
             return; // 订单金额不满足要求，不记录邀请

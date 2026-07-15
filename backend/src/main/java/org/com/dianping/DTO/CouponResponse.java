@@ -14,6 +14,6 @@ public record CouponResponse(
     BigDecimal maxAmount,
     String expireTime) {
     public CouponResponse(Coupon coupon) {
-        this(coupon.getCouponName(), coupon.getUserId(), coupon.getCouponAmount(), coupon.getCategory(), coupon.getShopId().toString(), coupon.getType(), coupon.getValue(), coupon.getMinAmount(), coupon.getMaxAmount(), coupon.getExpireTime().toString());
+        this(coupon.getCouponName(), coupon.getUserId(), coupon.getCouponAmount(), coupon.getCategory(), coupon.getShopId() == null ? null : coupon.getShopId().toString(), coupon.getType(), coupon.getValue(), coupon.getMinAmount(), coupon.getMaxAmount(), coupon.getExpireTime() == null ? null : coupon.getExpireTime().toString());
     }
 }

@@ -13,7 +13,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
     @Bean SecurityFilterChain securityFilterChain(HttpSecurity http, SessionUserFilter sessionUserFilter) throws Exception {
         return http.csrf(csrf -> csrf.disable()).sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-                .authorizeHttpRequests(a -> a.requestMatchers("/api/orders/**", "/api/coupons/**", "/api/reviews/**", "/api/invitation-*", "/api/operations/**").authenticated().anyRequest().permitAll())
+                .authorizeHttpRequests(a -> a.requestMatchers("/api/orders/**", "/api/coupons/**", "/api/reviews/**", "/api/invitation-records", "/api/reward-coupons", "/api/operations/**", "/api/search/**").authenticated().anyRequest().permitAll())
                 .addFilterBefore(sessionUserFilter, UsernamePasswordAuthenticationFilter.class).build();
     }
 }

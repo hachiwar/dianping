@@ -15,7 +15,7 @@ import jakarta.persistence.Table;
  * @author Software Engineering Group
  */
 @Entity
-@Table(name = "user")
+@Table(name = "`user`")
 public class User {
     /**
      * 用户ID
@@ -43,7 +43,7 @@ public class User {
      * 使用BCrypt算法加密后的密码字符串
      * </p>
      */
-    @Column(name = "encryptedPassword", nullable = false, unique = true)
+    @Column(name = "encryptedPassword", nullable = false)
     private String encryptedPassword;
 
     /**

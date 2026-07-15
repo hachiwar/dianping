@@ -22,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.ApplicationEventPublisher;
 import org.com.dianping.event.OrderCreated;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 public class OrderService {
@@ -55,6 +57,9 @@ public class OrderService {
         Boolean acquired = null;
         try { acquired = redis.opsForValue().setIfAbsent(idempotencyRedisKey, "PROCESSING", Duration.ofHours(24)); } catch (RuntimeException ignored) { }
         if (Boolean.FALSE.equals(acquired)) return orderRepository.findByUserIdAndIdempotencyKey(userId, idempotencyKey).orElseThrow(() -> new IllegalStateException("请求处理中，请重试"));
+        if (Boolean.TRUE.equals(acquired)) TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override public void afterCompletion(int status) { if (status != STATUS_COMMITTED) try { redis.delete(idempotencyRedisKey); } catch (RuntimeException ignored) { } }
+        });
         PackageGroup pkg = packageRepository.findById(packageId).orElseThrow(() -> new IllegalArgumentException("套餐不存在"));
         Merchant merchant = merchantRepository.findById(merchantId).orElseThrow(() -> new IllegalArgumentException("商家不存在"));
         if (!pkg.getMerchantId().equals(merchantId)) throw new IllegalArgumentException("套餐不属于该商家");
@@ -72,6 +77,8 @@ public class OrderService {
         Order saved = orderRepository.saveAndFlush(order);
         try { redis.opsForValue().set(idempotencyRedisKey, saved.getId().toString(), Duration.ofHours(24)); } catch (RuntimeException ignored) { }
         User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("用户不存在"));
+        user.setOrderCount(user.getOrderCount() + 1);
+        userRepository.save(user);
         if (invitationCode != null && !invitationCode.isBlank()) bindInvitation(user, invitationCode, saved.getFinalPrice());
         else if (user.getInviterId() != null) invitationService.processInvitationReward(user.getInviterId(), userId, saved.getFinalPrice());
         events.publishEvent(OrderCreated.of(saved.getId()));

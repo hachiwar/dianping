@@ -9,8 +9,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 @Entity
-@Table(name = "invitation_record")
+@Table(name = "invitation_record", uniqueConstraints = @UniqueConstraint(name = "uk_invitation_invitee", columnNames = {"user_id", "invitee_id"}))
 //查看自己的邀请记录：包括成功邀请的新用户列表、邀请成功订单的下单时间与实付金额。
 public class InvitationRecord {
     @Id

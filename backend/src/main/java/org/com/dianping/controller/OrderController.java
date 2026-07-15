@@ -16,7 +16,8 @@ public class OrderController {
     public ResponseEntity<?> createOrder(@RequestHeader("UserId") Long userId, @RequestBody Map<String, Object> request) {
         Long packageId = Long.valueOf(request.get("packageId").toString());
         Long merchantId = Long.valueOf(request.get("businessId").toString());
-        String key = String.valueOf(request.get("idempotencyKey"));
+        Object keyValue = request.get("idempotencyKey");
+        String key = keyValue == null ? null : keyValue.toString();
         try {
             Order order = orderService.createOrder(userId, packageId, merchantId, (String) request.get("invitationCode"), key);
             return ResponseEntity.ok(Map.of("orderId", order.getId(), "businessNo", order.getBusinessNo(), "message", "订单创建成功"));

@@ -8,4 +8,5 @@ import java.util.List;
 public interface InvitationRecordRepository extends JpaRepository<InvitationRecord, Long> {
     long countByUserId(Long userId);
     List<InvitationRecord> findByUserId(Long userId);
+    boolean existsByUserIdAndInviteeId(Long userId, Long inviteeId);
 }

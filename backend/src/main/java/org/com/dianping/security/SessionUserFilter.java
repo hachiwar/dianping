@@ -18,7 +18,7 @@ public class SessionUserFilter extends OncePerRequestFilter {
         Object value = request.getSession(false) == null ? null : request.getSession(false).getAttribute("USER_SESSION");
         if (value instanceof UserResponse user) {
             String header = request.getHeader("UserId");
-            if (request.getRequestURI().startsWith("/api/") && (header == null || !header.equals(String.valueOf(user.id())))) { response.sendError(403, "用户身份不匹配"); return; }
+            if (header != null && !header.equals(String.valueOf(user.id()))) { response.sendError(403, "用户身份不匹配"); return; }
             SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(user.id(), null, AuthorityUtils.createAuthorityList("ROLE_USER")));
         }
         chain.doFilter(request, response);
