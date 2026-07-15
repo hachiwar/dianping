@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -24,7 +25,8 @@ public class ReviewController {
         return reviewService.getReviewsByMerchantID(merchantID);
     }
     @GetMapping("/user/{userID}")
-    public List<Review> getReviewsByUserID(@PathVariable Long userID) {
+    public List<Review> getReviewsByUserID(@PathVariable Long userID, @RequestHeader("UserId") Long currentUserId) {
+        if (!userID.equals(currentUserId)) throw new SecurityException("无权查看他人评论");
         return reviewService.getReviewsByUserID(userID);
     }
     @GetMapping("/parent/{parentID}")
@@ -33,7 +35,8 @@ public class ReviewController {
     }
 
     @PostMapping("/add")
-    public void addReview(@RequestBody Review review) {
+    public void addReview(@RequestBody Review review, @RequestHeader("UserId") Long currentUserId) {
+        review.setUserID(currentUserId);
         reviewService.createReview(review);
     }
 }
