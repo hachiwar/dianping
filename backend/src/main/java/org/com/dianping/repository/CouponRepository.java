@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.com.dianping.entity.Coupon;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 
 public interface CouponRepository extends JpaRepository<Coupon, Long> {
@@ -28,7 +29,11 @@ public interface CouponRepository extends JpaRepository<Coupon, Long> {
         @Param("userId") Long userId,
         @Param("merchantCategory") String merchantCategory,
         @Param("merchantId") Long merchantId,
-        @Param("initPrice") Double initPrice);
+        @Param("initPrice") java.math.BigDecimal initPrice);
+
+    @Modifying
+    @Query("UPDATE Coupon c SET c.couponAmount = c.couponAmount - 1 WHERE c.id = :couponId AND c.couponAmount > 0")
+    int claim(@Param("couponId") Long couponId);
 
     // 根据用户 ID 查询优惠券
     List<Coupon> findByUserId(Long userId);

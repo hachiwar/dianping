@@ -13,6 +13,6 @@ public interface PackageGroupRepository extends JpaRepository<PackageGroup, Long
     List<PackageGroup> findByMerchantId(Long merchantId);
 
     @Modifying
-    @Query("UPDATE PackageGroup p SET p.sales = p.sales + 1 WHERE p.id = :packageId")
-    void incrementSales(@Param("packageId") long packageId);
+    @Query("UPDATE PackageGroup p SET p.sales = p.sales + 1, p.stock = p.stock - 1 WHERE p.id = :packageId AND p.stock > 0")
+    int decrementStockAndIncrementSales(@Param("packageId") long packageId);
 }

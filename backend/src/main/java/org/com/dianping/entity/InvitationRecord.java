@@ -1,6 +1,7 @@
 package org.com.dianping.entity;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -26,7 +27,7 @@ public class InvitationRecord {
     private LocalDateTime orderTime;//同order的createTime
 
     @Column(nullable = false)
-    private Double price;
+    private BigDecimal price;
 
     @Column(nullable = false)
     private String inviteeName;  // 添加被邀请人名称字段
@@ -58,10 +59,10 @@ public class InvitationRecord {
     public void setOrderTime(LocalDateTime orderTime) {
         this.orderTime = orderTime;
     }
-    public Double getPrice() {
+    public BigDecimal getPrice() {
         return price;
     }
-    public void setPrice(Double price) {
+    public void setPrice(BigDecimal price) {
         this.price = price;
     }
     public String getInviteeName() {

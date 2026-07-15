@@ -1,5 +1,6 @@
 package org.com.dianping.DTO;
 import org.com.dianping.entity.Coupon;
+import java.math.BigDecimal;
 
 public record CouponResponse(
     String couponName,
@@ -8,9 +9,9 @@ public record CouponResponse(
     String category,
     String shop_id,
     String type,
-    Double value,
-    Double minAmount,
-    Double maxAmount,
+    BigDecimal value,
+    BigDecimal minAmount,
+    BigDecimal maxAmount,
     String expireTime) {
     public CouponResponse(Coupon coupon) {
         this(coupon.getCouponName(), coupon.getUserId(), coupon.getCouponAmount(), coupon.getCategory(), coupon.getShopId().toString(), coupon.getType(), coupon.getValue(), coupon.getMinAmount(), coupon.getMaxAmount(), coupon.getExpireTime().toString());

@@ -1,6 +1,7 @@
 package org.com.dianping.service;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 import org.com.dianping.entity.Coupon;
 import org.com.dianping.entity.InvitationRecord;
@@ -30,9 +31,9 @@ public class InvitationService {
     }
 
     @Transactional
-    public void processInvitationReward(Long inviterId, Long inviteeId, Double orderAmount) {
+    public void processInvitationReward(Long inviterId, Long inviteeId, BigDecimal orderAmount) {
         // 检查订单金额是否满足要求
-        if (orderAmount <= 10.0) {
+        if (orderAmount.compareTo(new BigDecimal("10.00")) <= 0) {
             return; // 订单金额不满足要求，不记录邀请
         }
 
@@ -61,8 +62,8 @@ public class InvitationService {
         coupon.setUserId(inviterId);
         coupon.setCouponName("20元无门槛优惠券");
         coupon.setType("立减");
-        coupon.setValue(20.0);
-        coupon.setMinAmount(0.0);
+        coupon.setValue(new BigDecimal("20.00"));
+        coupon.setMinAmount(BigDecimal.ZERO);
         coupon.setCouponAmount(1);
         coupon.setExpireTime(LocalDateTime.now().plusDays(7));
         couponService.saveCoupon(coupon);

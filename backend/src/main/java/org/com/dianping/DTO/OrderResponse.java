@@ -2,6 +2,7 @@ package org.com.dianping.DTO;
 
 import org.com.dianping.entity.Order;
 import org.com.dianping.entity.PackageGroup;
+import java.math.BigDecimal;
 
 public record OrderResponse(
         Long id,    // 改为id而不是orderId
@@ -9,7 +10,7 @@ public record OrderResponse(
         String orderNo,
         String packageTitle,
         String businessName,
-        Double finalPrice
+        BigDecimal finalPrice
 ) {
     public OrderResponse(Order order, PackageGroup pkg) {
         this(order.getId(), 

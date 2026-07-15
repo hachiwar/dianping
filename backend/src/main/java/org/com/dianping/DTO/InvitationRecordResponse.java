@@ -6,5 +6,5 @@ public record InvitationRecordResponse(
         Long id,
         String inviteeName,
         LocalDateTime orderTime,
-        Double price
+        java.math.BigDecimal price
 ) {}

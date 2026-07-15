@@ -1,5 +1,6 @@
 package org.com.dianping.service;
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -49,20 +50,20 @@ public class CouponService {
         coupon_init.setExpireTime(null);
         coupon_init.setShopId(null);
         coupon_init.setCouponAmount(1);
-        coupon_init.setMaxAmount(9999999999999999.0);
+        coupon_init.setMaxAmount(new BigDecimal("9999999999999999.00"));
         switch (choice) {
             case 'A':
                 coupon_init.setType("满减");
                 coupon_init.setCategory("火锅");
-                coupon_init.setMiniAmount(100.0);
-                coupon_init.setValue(38.0);
+                coupon_init.setMiniAmount(new BigDecimal("100.00"));
+                coupon_init.setValue(new BigDecimal("38.00"));
                 coupon_init.setCouponName("满100减38元(火锅专用券)");
                 coupon_init.setExpireTime(LocalDateTime.now().plusDays(7));
                 break;
             case 'B':
                 coupon_init.setType("折扣");
-                coupon_init.setMiniAmount(9.0);
-                coupon_init.setValue(8.0);
+                coupon_init.setMiniAmount(new BigDecimal("9.00"));
+                coupon_init.setValue(new BigDecimal("8.00"));
                 coupon_init.setCouponName("满9元8折券(喜茶专用券)");
                 coupon_init.setExpireTime(LocalDateTime.now().plusDays(7));
                 coupon_init.setShopId(32L);
@@ -70,26 +71,26 @@ public class CouponService {
             case 'C':
                 coupon_init.setType("秒杀");
                 coupon_init.setCategory("奶茶");
-                coupon_init.setMiniAmount(0.0);
-                coupon_init.setValue(0.0);
+                coupon_init.setMiniAmount(BigDecimal.ZERO);
+                coupon_init.setValue(BigDecimal.ZERO);
                 coupon_init.setCouponName("奶茶畅喝秒杀券");
                 coupon_init.setExpireTime(LocalDateTime.now().plusDays(1));
                 break; 
             case 'D':
                 coupon_init.setType("立减");
                 coupon_init.setCategory(null);
-                coupon_init.setMiniAmount(0.0);
-                coupon_init.setValue(10.0);
+                coupon_init.setMiniAmount(BigDecimal.ZERO);
+                coupon_init.setValue(new BigDecimal("10.00"));
                 coupon_init.setCouponName("通用立减10元券");
                 break; 
             case 'E':
                 coupon_init.setType("折扣");
                 coupon_init.setCategory(null);
-                coupon_init.setMiniAmount(0.0);
-                coupon_init.setValue(8.0);
+                coupon_init.setMiniAmount(BigDecimal.ZERO);
+                coupon_init.setValue(new BigDecimal("8.00"));
                 coupon_init.setCouponName("通用8折券,最高抵扣20元");
                 coupon_init.setExpireTime(LocalDateTime.now().plusDays(7));
-                coupon_init.setMaxAmount(20.0);
+                coupon_init.setMaxAmount(new BigDecimal("20.00"));
                 break;
             default:
                 throw new IllegalArgumentException("无效的选择类型");
@@ -103,11 +104,8 @@ public class CouponService {
     }
 
     public void useCoupon(Long couponId) {
-        Optional<Coupon> optionalCoupon = couponRepository.findById(couponId);
-        if (optionalCoupon.isPresent()) {
-            Coupon coupon = optionalCoupon.get();
-            coupon.setCouponAmount(coupon.getCouponAmount() - 1);
-            couponRepository.save(coupon);
-        }
+        if (!claimCoupon(couponId)) throw new IllegalStateException("优惠券已使用");
     }
+
+    public boolean claimCoupon(Long couponId) { return couponRepository.claim(couponId) == 1; }
 }
