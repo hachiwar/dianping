@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.ApplicationEventPublisher;
 import org.com.dianping.event.OrderCreated;
+import org.com.dianping.event.OutboxService;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -37,15 +38,16 @@ public class OrderService {
     private final InvitationService invitationService;
     private final ApplicationEventPublisher events;
     private final StringRedisTemplate redis;
+    private final OutboxService outbox;
 
     public OrderService(OrderRepository orderRepository, PackageGroupRepository packageRepository,
                         CouponRepository couponRepository, CouponService couponService,
                         MerchantRepository merchantRepository, UserRepository userRepository,
-                        InvitationService invitationService, ApplicationEventPublisher events, StringRedisTemplate redis) {
+                        InvitationService invitationService, ApplicationEventPublisher events, StringRedisTemplate redis, OutboxService outbox) {
         this.orderRepository = orderRepository; this.packageRepository = packageRepository;
         this.couponRepository = couponRepository; this.couponService = couponService;
         this.merchantRepository = merchantRepository; this.userRepository = userRepository;
-        this.invitationService = invitationService; this.events = events; this.redis = redis;
+        this.invitationService = invitationService; this.events = events; this.redis = redis; this.outbox = outbox;
     }
 
     @Transactional
@@ -81,7 +83,9 @@ public class OrderService {
         userRepository.save(user);
         if (invitationCode != null && !invitationCode.isBlank()) bindInvitation(user, invitationCode, saved.getFinalPrice());
         else if (user.getInviterId() != null) invitationService.processInvitationReward(user.getInviterId(), userId, saved.getFinalPrice());
-        events.publishEvent(OrderCreated.of(saved.getId()));
+        OrderCreated event = OrderCreated.of(saved.getId());
+        outbox.record(event);
+        events.publishEvent(event);
         return saved;
     }
 
