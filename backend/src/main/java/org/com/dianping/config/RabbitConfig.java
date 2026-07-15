@@ -5,8 +5,6 @@ import org.springframework.context.annotation.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
-import org.springframework.amqp.rabbit.retry.RejectAndDontRequeueRecoverer;
-import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder;
 import org.springframework.amqp.support.converter.*;
 
 @Configuration
@@ -22,7 +20,7 @@ public class RabbitConfig {
     @Bean SimpleRabbitListenerContainerFactory manualRabbitListenerFactory(ConnectionFactory connectionFactory, MessageConverter messageConverter) {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory); factory.setAcknowledgeMode(AcknowledgeMode.MANUAL); factory.setMessageConverter(messageConverter);
-        factory.setAdviceChain(RetryInterceptorBuilder.stateless().maxAttempts(3).recoverer(new RejectAndDontRequeueRecoverer()).build());
+        factory.setDefaultRequeueRejected(false);
         return factory;
     }
 }
