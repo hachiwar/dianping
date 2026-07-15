@@ -1,31 +1,18 @@
 package org.com.dianping.handler;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
+import java.time.Instant;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.*;
+import org.springframework.web.bind.annotation.*;
 
-/**
- * Global exception handler to handle exceptions across the application.
- */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-    /**
-     * Handles {@link RuntimeException} and returns a structured error response.
-     *
-     * @param e the runtime exception
-     * @return a {@link ResponseEntity} containing the error message
-     */
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<?> handleRuntimeException(RuntimeException e) {
-        return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
-    }
-
-    /**
-     * A record to encapsulate error response details.
-     *
-     * @param message the error message
-     */
-    record ErrorResponse(String message) {
-    }
+    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
+    ResponseEntity<ErrorResponse> handleBadRequest(RuntimeException e, HttpServletRequest request) { return response(HttpStatus.BAD_REQUEST, e, request); }
+    @ExceptionHandler(SecurityException.class)
+    ResponseEntity<ErrorResponse> handleForbidden(SecurityException e, HttpServletRequest request) { return response(HttpStatus.FORBIDDEN, e, request); }
+    @ExceptionHandler(Exception.class)
+    ResponseEntity<ErrorResponse> handleException(Exception e, HttpServletRequest request) { return response(HttpStatus.INTERNAL_SERVER_ERROR, e, request); }
+    private ResponseEntity<ErrorResponse> response(HttpStatus status, Exception e, HttpServletRequest request) { return ResponseEntity.status(status).body(new ErrorResponse(status.value(), e.getMessage(), String.valueOf(request.getAttribute("requestId")), Instant.now())); }
+    record ErrorResponse(int code, String message, String requestId, Instant timestamp) { }
 }

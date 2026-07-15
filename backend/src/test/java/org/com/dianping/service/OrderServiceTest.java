@@ -7,7 +7,7 @@ import org.com.dianping.entity.Coupon;
 import org.junit.jupiter.api.Test;
 
 class OrderServiceTest {
-    private final OrderService service = new OrderService(null, null, null, null, null, null, null);
+    private final OrderService service = new OrderService(null, null, null, null, null, null, null, null);
 
     @Test
     void calculatesCouponDiscountsWithTwoDecimalRounding() {

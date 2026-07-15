@@ -6,6 +6,9 @@ import java.util.Optional;
 import org.com.dianping.entity.Merchant;
 import org.com.dianping.repository.MerchantRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Duration;
 
 import jakarta.transaction.Transactional;
 import net.sourceforge.pinyin4j.PinyinHelper;
@@ -14,9 +17,13 @@ import net.sourceforge.pinyin4j.PinyinHelper;
 public class MerchantService {
 
     private final MerchantRepository merchantRepository;
+    private final StringRedisTemplate redis;
+    private final ObjectMapper objectMapper;
 
-    public MerchantService(MerchantRepository merchantRepository) {
+    public MerchantService(MerchantRepository merchantRepository, StringRedisTemplate redis, ObjectMapper objectMapper) {
         this.merchantRepository = merchantRepository;
+        this.redis = redis;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional
@@ -99,8 +106,18 @@ public class MerchantService {
     }
 
     public Optional<Merchant> getMerchantById(Long id) {
-        return merchantRepository.findById(id);
+        String key = "merchant:detail:" + id;
+        try {
+            String cached = redis.opsForValue().get(key);
+            if ("__null__".equals(cached)) return Optional.empty();
+            if (cached != null) return Optional.of(objectMapper.readValue(cached, Merchant.class));
+            Optional<Merchant> merchant = merchantRepository.findById(id);
+            redis.opsForValue().set(key, merchant.map(value -> json(value)).orElse("__null__"), Duration.ofMinutes(merchant.isPresent() ? 10 : 1));
+            return merchant;
+        } catch (Exception ignored) { return merchantRepository.findById(id); }
     }
+
+    private String json(Merchant merchant) { try { return objectMapper.writeValueAsString(merchant); } catch (Exception e) { throw new IllegalStateException(e); } }
 
     public List<Merchant> searchMerchantsWithPinyin(String keyword) {
         return merchantRepository.searchMerchantsWithPinyin(keyword, null, null, null);

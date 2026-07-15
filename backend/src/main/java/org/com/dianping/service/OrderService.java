@@ -18,6 +18,8 @@ import org.com.dianping.repository.PackageGroupRepository;
 import org.com.dianping.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.ApplicationEventPublisher;
+import org.com.dianping.event.OrderCreated;
 
 @Service
 public class OrderService {
@@ -29,15 +31,16 @@ public class OrderService {
     private final MerchantRepository merchantRepository;
     private final UserRepository userRepository;
     private final InvitationService invitationService;
+    private final ApplicationEventPublisher events;
 
     public OrderService(OrderRepository orderRepository, PackageGroupRepository packageRepository,
                         CouponRepository couponRepository, CouponService couponService,
                         MerchantRepository merchantRepository, UserRepository userRepository,
-                        InvitationService invitationService) {
+                        InvitationService invitationService, ApplicationEventPublisher events) {
         this.orderRepository = orderRepository; this.packageRepository = packageRepository;
         this.couponRepository = couponRepository; this.couponService = couponService;
         this.merchantRepository = merchantRepository; this.userRepository = userRepository;
-        this.invitationService = invitationService;
+        this.invitationService = invitationService; this.events = events;
     }
 
     @Transactional
@@ -63,6 +66,7 @@ public class OrderService {
         User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("用户不存在"));
         if (invitationCode != null && !invitationCode.isBlank()) bindInvitation(user, invitationCode, saved.getFinalPrice());
         else if (user.getInviterId() != null) invitationService.processInvitationReward(user.getInviterId(), userId, saved.getFinalPrice());
+        events.publishEvent(OrderCreated.of(saved.getId()));
         return saved;
     }
 
