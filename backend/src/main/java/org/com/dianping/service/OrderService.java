@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.time.Duration;
 import org.com.dianping.DTO.OrderResponse;
 import org.com.dianping.entity.Coupon;
 import org.com.dianping.entity.Merchant;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.ApplicationEventPublisher;
 import org.com.dianping.event.OrderCreated;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 @Service
 public class OrderService {
@@ -32,15 +34,16 @@ public class OrderService {
     private final UserRepository userRepository;
     private final InvitationService invitationService;
     private final ApplicationEventPublisher events;
+    private final StringRedisTemplate redis;
 
     public OrderService(OrderRepository orderRepository, PackageGroupRepository packageRepository,
                         CouponRepository couponRepository, CouponService couponService,
                         MerchantRepository merchantRepository, UserRepository userRepository,
-                        InvitationService invitationService, ApplicationEventPublisher events) {
+                        InvitationService invitationService, ApplicationEventPublisher events, StringRedisTemplate redis) {
         this.orderRepository = orderRepository; this.packageRepository = packageRepository;
         this.couponRepository = couponRepository; this.couponService = couponService;
         this.merchantRepository = merchantRepository; this.userRepository = userRepository;
-        this.invitationService = invitationService; this.events = events;
+        this.invitationService = invitationService; this.events = events; this.redis = redis;
     }
 
     @Transactional
@@ -48,6 +51,10 @@ public class OrderService {
         if (idempotencyKey == null || idempotencyKey.isBlank() || idempotencyKey.length() > 64) throw new IllegalArgumentException("idempotencyKey 无效");
         var existing = orderRepository.findByUserIdAndIdempotencyKey(userId, idempotencyKey);
         if (existing.isPresent()) return existing.get();
+        String idempotencyRedisKey = "order:idempotency:" + userId + ":" + idempotencyKey;
+        Boolean acquired = null;
+        try { acquired = redis.opsForValue().setIfAbsent(idempotencyRedisKey, "PROCESSING", Duration.ofHours(24)); } catch (RuntimeException ignored) { }
+        if (Boolean.FALSE.equals(acquired)) return orderRepository.findByUserIdAndIdempotencyKey(userId, idempotencyKey).orElseThrow(() -> new IllegalStateException("请求处理中，请重试"));
         PackageGroup pkg = packageRepository.findById(packageId).orElseThrow(() -> new IllegalArgumentException("套餐不存在"));
         Merchant merchant = merchantRepository.findById(merchantId).orElseThrow(() -> new IllegalArgumentException("商家不存在"));
         if (!pkg.getMerchantId().equals(merchantId)) throw new IllegalArgumentException("套餐不属于该商家");
@@ -63,6 +70,7 @@ public class OrderService {
         order.setBusinessNo("DP" + UUID.randomUUID().toString().replace("-", "").substring(0, 20));
         order.setIdempotencyKey(idempotencyKey); order.setStatus("未使用");
         Order saved = orderRepository.saveAndFlush(order);
+        try { redis.opsForValue().set(idempotencyRedisKey, saved.getId().toString(), Duration.ofHours(24)); } catch (RuntimeException ignored) { }
         User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("用户不存在"));
         if (invitationCode != null && !invitationCode.isBlank()) bindInvitation(user, invitationCode, saved.getFinalPrice());
         else if (user.getInviterId() != null) invitationService.processInvitationReward(user.getInviterId(), userId, saved.getFinalPrice());

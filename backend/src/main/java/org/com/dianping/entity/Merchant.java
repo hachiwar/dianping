@@ -45,6 +45,9 @@ public class Merchant {
     @Convert(converter = StringListConverter.class)
     private List<String> photoUrls;  // 商家详情页支持多张图片
     // Getters and Setters
+    private Double longitude;
+    private Double latitude;
+
     public Long getId() {
         return id;
     }
@@ -140,6 +143,10 @@ public class Merchant {
     public void setPhotoUrls(List<String> photoUrls) {
         this.photoUrls = photoUrls;
     }
+    public Double getLongitude() { return longitude; }
+    public void setLongitude(Double longitude) { this.longitude = longitude; }
+    public Double getLatitude() { return latitude; }
+    public void setLatitude(Double latitude) { this.latitude = latitude; }
 }
 
 @Converter

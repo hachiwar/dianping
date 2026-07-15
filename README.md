@@ -18,3 +18,12 @@ npm run build
 ## 多实例开发环境
 
 先执行 `cd backend && ./mvnw package -DskipTests`，再在仓库根目录复制 `.env.example` 为 `.env` 并设置密码，运行 `docker compose up --build`。访问 `http://localhost:8080/actuator/health` 检查实例健康；停止任一 backend 容器后，Nginx 会转发新请求到另一实例。
+
+## 验证
+
+```cmd
+cd backend
+mvnw.cmd test
+```
+
+该测试包含优惠金额边界和库存为 1 时的并发原子扣减。完整环境启动后，使用 `GET /api/businesses/nearby?category=火锅&longitude=116.4&latitude=39.9` 验证 GEO；使用 `GET /api/operations/dead-letters` 查询死信，并用 `POST /api/operations/dead-letters/replay` 进行单条人工补偿。

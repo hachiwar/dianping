@@ -14,7 +14,7 @@ public class Coupon {
     private String category;
     private Long shopId;
     @Column(nullable = false) private String type;
-    @Column(precision = 19, scale = 2) private BigDecimal value;
+    @Column(name = "coupon_value", precision = 19, scale = 2) private BigDecimal value;
     @Column(precision = 19, scale = 2) private BigDecimal maxAmount;
     @Column(precision = 19, scale = 2) private BigDecimal minAmount;
     private LocalDateTime expireTime;

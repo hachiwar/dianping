@@ -2,6 +2,8 @@ package org.com.dianping.controller;
 
 import org.com.dianping.entity.Merchant;
 import org.com.dianping.service.MerchantService;
+import org.com.dianping.service.MerchantLocationService;
+import org.com.dianping.DTO.NearbyMerchantResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,14 +17,16 @@ import java.util.List;
 public class MerchantController {
 
     private final MerchantService merchantService;
+    private final MerchantLocationService locationService;
 
     /**
      * Constructs a new {@link MerchantController}.
      *
      * @param merchantService the merchant service
      */
-    public MerchantController(MerchantService merchantService) {
+    public MerchantController(MerchantService merchantService, MerchantLocationService locationService) {
         this.merchantService = merchantService;
+        this.locationService = locationService;
     }
 
     /**
@@ -67,5 +71,10 @@ public class MerchantController {
     @GetMapping("/search")
     public List<Merchant> searchMerchants(@RequestParam String keyword) {
         return merchantService.searchMerchantsWithPinyin(keyword);
+    }
+
+    @GetMapping("/nearby")
+    public List<NearbyMerchantResponse> nearby(@RequestParam String category, @RequestParam double longitude, @RequestParam double latitude, @RequestParam(defaultValue = "3000") double radiusMeters, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        return locationService.nearby(category, longitude, latitude, radiusMeters, page, size);
     }
 }
