@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.com.dianping.entity.Review;
 import org.com.dianping.service.ReviewService;
+import org.com.dianping.security.CurrentUser;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,7 +26,8 @@ public class ReviewController {
         return reviewService.getReviewsByMerchantID(merchantID);
     }
     @GetMapping("/user/{userID}")
-    public List<Review> getReviewsByUserID(@PathVariable Long userID, @RequestHeader("UserId") Long currentUserId) {
+    public List<Review> getReviewsByUserID(@PathVariable Long userID) {
+        Long currentUserId = CurrentUser.id();
         if (!userID.equals(currentUserId)) throw new SecurityException("无权查看他人评论");
         return reviewService.getReviewsByUserID(userID);
     }
@@ -35,7 +37,8 @@ public class ReviewController {
     }
 
     @PostMapping("/add")
-    public void addReview(@RequestBody Review review, @RequestHeader("UserId") Long currentUserId) {
+    public void addReview(@RequestBody Review review) {
+        Long currentUserId = CurrentUser.id();
         review.setUserID(currentUserId);
         reviewService.createReview(review);
     }

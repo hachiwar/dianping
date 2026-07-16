@@ -2,9 +2,9 @@ services:
   mysql:
     image: mysql:8.4
     environment:
-      MYSQL_DATABASE: dianping
-      MYSQL_USER: dianping
-      MYSQL_PASSWORD: dianping
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-dianping}
+      MYSQL_USER: ${MYSQL_USER:?set MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD}
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
@@ -21,8 +21,8 @@ services:
     build: ./backend
     environment:
       DB_URL: jdbc:mysql://mysql:3306/dianping
-      DB_USERNAME: dianping
-      DB_PASSWORD: dianping
+      DB_USERNAME: ${MYSQL_USER:?set MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD}
       REDIS_HOST: redis
       RABBITMQ_HOST: rabbitmq
       JPA_DDL_AUTO: update
@@ -43,8 +43,8 @@ services:
     build: ./backend
     environment:
       DB_URL: jdbc:mysql://mysql:3306/dianping
-      DB_USERNAME: dianping
-      DB_PASSWORD: dianping
+      DB_USERNAME: ${MYSQL_USER:?set MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD}
       REDIS_HOST: redis
       RABBITMQ_HOST: rabbitmq
       JPA_DDL_AUTO: validate

@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.com.dianping.entity.SearchHistory;
 import org.com.dianping.service.SearchHistoryService;
+import org.com.dianping.security.CurrentUser;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,9 +45,8 @@ public class SearchController {
      * @return the saved search history
      */
     @PostMapping
-    public SearchHistory saveSearch(@RequestParam String keyword,
-                                    @RequestHeader("UserId") Long userId) {
-        return service.saveSearch(userId, keyword);
+    public SearchHistory saveSearch(@RequestParam String keyword) {
+        return service.saveSearch(CurrentUser.id(), keyword);
     }
 
     /**
@@ -56,8 +56,8 @@ public class SearchController {
      * @return a list of search history
      */
     @GetMapping
-    public List<SearchHistory> getHistory(@RequestHeader("UserId") Long userId) {
-        return service.getHistory(userId);
+    public List<SearchHistory> getHistory() {
+        return service.getHistory(CurrentUser.id());
     }
 
     /**
@@ -67,10 +67,8 @@ public class SearchController {
      * @param userId the ID of the user
      */
     @DeleteMapping("/{id}")
-    public void deleteHistory(@PathVariable Long id,
-                              @RequestHeader("UserId") Long userId) {
-        System.out.println("Deleting history - userId: " + userId + ", id: " + id);
-        service.deleteHistory(userId, id);
+    public void deleteHistory(@PathVariable Long id) {
+        service.deleteHistory(CurrentUser.id(), id);
     }
 
     /**
@@ -79,8 +77,7 @@ public class SearchController {
      * @param userId the ID of the user
      */
     @DeleteMapping
-    public void clearAll(@RequestHeader("UserId") Long userId) {
-        System.out.println("Clearing all history - userId: " + userId);
-        service.clearAll(userId);
+    public void clearAll() {
+        service.clearAll(CurrentUser.id());
     }
 }

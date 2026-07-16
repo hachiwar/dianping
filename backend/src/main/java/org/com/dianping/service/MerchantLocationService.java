@@ -13,6 +13,8 @@ import org.springframework.data.redis.core.*;
 import org.springframework.stereotype.Service;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Scheduled;
+import java.time.Duration;
 
 @Service
 public class MerchantLocationService {
@@ -21,10 +23,12 @@ public class MerchantLocationService {
     public MerchantLocationService(MerchantRepository merchants, StringRedisTemplate redis) { this.merchants = merchants; this.redis = redis; }
     public void index(Merchant merchant) {
         if (merchant.getLongitude() == null || merchant.getLatitude() == null) return;
-        try { redis.opsForGeo().add(key(merchant.getCategory()), new Point(merchant.getLongitude(), merchant.getLatitude()), merchant.getId().toString()); } catch (RuntimeException ignored) { }
+        try { redis.opsForGeo().add(key(merchant.getCategory()), new Point(merchant.getLongitude(), merchant.getLatitude()), merchant.getId().toString()); redis.expire(key(merchant.getCategory()), Duration.ofHours(25)); } catch (RuntimeException ignored) { }
     }
     @EventListener(ApplicationReadyEvent.class)
     public void rebuildIndex() { merchants.findAll().forEach(this::index); }
+    @Scheduled(fixedDelay = 43_200_000)
+    public void refreshIndex() { rebuildIndex(); }
     public List<NearbyMerchantResponse> nearby(String category, double longitude, double latitude, double radiusMeters, int page, int size) {
         if (page < 0 || size < 1 || size > 100 || radiusMeters <= 0) throw new IllegalArgumentException("附近商家查询参数无效");
         try {

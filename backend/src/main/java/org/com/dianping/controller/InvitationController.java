@@ -5,6 +5,7 @@ import org.com.dianping.entity.Coupon;
 import org.com.dianping.entity.InvitationReward;
 import org.com.dianping.entity.User;
 import org.com.dianping.repository.*;
+import org.com.dianping.security.CurrentUser;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,7 +30,8 @@ public class InvitationController {
     }
 
     @GetMapping("/invitation-records")
-    public List<InvitationRecordResponse> getRecords(@RequestHeader("UserId") Long userId) {
+    public List<InvitationRecordResponse> getRecords() {
+        Long userId = CurrentUser.id();
         return recordRepo.findByUserId(userId).stream()
                 .map(r -> new InvitationRecordResponse(
                         r.getId(),
@@ -40,7 +42,8 @@ public class InvitationController {
     }
 
     @GetMapping("/reward-coupons")
-    public List<InvitationRewardResponse> getRewards(@RequestHeader("UserId") Long userId) {
+    public List<InvitationRewardResponse> getRewards() {
+        Long userId = CurrentUser.id();
         return rewardRepo.findByUserId(userId).stream()
                 .map(r -> {
                     Coupon c = couponRepo.findById(r.getCouponId()).orElse(null);

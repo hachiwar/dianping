@@ -9,21 +9,30 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
+import java.util.concurrent.ThreadLocalRandom;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.com.dianping.observability.PlatformMetrics;
 
 import jakarta.transaction.Transactional;
 import net.sourceforge.pinyin4j.PinyinHelper;
 
 @Service
 public class MerchantService {
+    private static final Logger log = LoggerFactory.getLogger(MerchantService.class);
 
     private final MerchantRepository merchantRepository;
     private final StringRedisTemplate redis;
     private final ObjectMapper objectMapper;
+    private final DatabaseFallbackLimiter fallbackLimiter;
+    private final PlatformMetrics metrics;
 
-    public MerchantService(MerchantRepository merchantRepository, StringRedisTemplate redis, ObjectMapper objectMapper) {
+    public MerchantService(MerchantRepository merchantRepository, StringRedisTemplate redis, ObjectMapper objectMapper, DatabaseFallbackLimiter fallbackLimiter, PlatformMetrics metrics) {
         this.merchantRepository = merchantRepository;
         this.redis = redis;
         this.objectMapper = objectMapper;
+        this.fallbackLimiter = fallbackLimiter;
+        this.metrics = metrics;
     }
 
     @Transactional
@@ -109,12 +118,16 @@ public class MerchantService {
         String key = "merchant:detail:" + id;
         try {
             String cached = redis.opsForValue().get(key);
-            if ("__null__".equals(cached)) return Optional.empty();
-            if (cached != null) return Optional.of(objectMapper.readValue(cached, Merchant.class));
+            if ("__null__".equals(cached)) { metrics.cache("merchant", "hit"); return Optional.empty(); }
+            if (cached != null) { metrics.cache("merchant", "hit"); return Optional.of(objectMapper.readValue(cached, Merchant.class)); }
             Optional<Merchant> merchant = merchantRepository.findById(id);
-            redis.opsForValue().set(key, merchant.map(value -> json(value)).orElse("__null__"), Duration.ofMinutes(merchant.isPresent() ? 10 : 1));
+            metrics.cache("merchant", "miss");
+            redis.opsForValue().set(key, merchant.map(this::json).orElse("__null__"), Duration.ofMinutes(merchant.isPresent() ? 10 + ThreadLocalRandom.current().nextInt(5) : 1));
             return merchant;
-        } catch (Exception ignored) { return merchantRepository.findById(id); }
+        } catch (Exception ex) {
+            metrics.cache("merchant", "fallback"); log.warn("merchant cache unavailable, falling back to database: {}", ex.toString());
+            return fallbackLimiter.execute(() -> merchantRepository.findById(id));
+        }
     }
 
     private String json(Merchant merchant) { try { return objectMapper.writeValueAsString(merchant); } catch (Exception e) { throw new IllegalStateException(e); } }
