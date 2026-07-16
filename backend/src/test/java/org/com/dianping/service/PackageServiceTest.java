@@ -6,6 +6,7 @@ import org.com.dianping.repository.PackageGroupRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.com.dianping.observability.PlatformMetrics;
 
 class PackageServiceTest {
     @Test void saveInvalidatesPackageCache() {
@@ -14,7 +15,7 @@ class PackageServiceTest {
         PackageGroup value = new PackageGroup(); value.setId(7L);
         when(repository.save(value)).thenReturn(value);
 
-        new PackageService(repository, redis, new ObjectMapper()).save(value);
+        new PackageService(repository, redis, new ObjectMapper(), new DatabaseFallbackLimiter(), mock(PlatformMetrics.class)).save(value);
 
         verify(redis).delete("package:detail:7");
     }
