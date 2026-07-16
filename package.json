@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "qrcode.vue": "^3.6.0"
+  }
+}

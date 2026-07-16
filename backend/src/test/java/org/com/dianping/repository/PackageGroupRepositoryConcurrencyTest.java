@@ -1,0 +1,40 @@
+package org.com.dianping.repository;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import java.math.BigDecimal;
+import java.util.concurrent.*;
+import org.com.dianping.entity.PackageGroup;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+@DataJpaTest
+class PackageGroupRepositoryConcurrencyTest {
+    @Autowired PackageGroupRepository packages;
+    @Autowired TransactionTemplate transactions;
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void onlyOneConcurrentPurchaseCanConsumeTheLastStock() throws Exception {
+        Long id = transactions.execute(status -> packages.saveAndFlush(newPackage()).getId());
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        CountDownLatch start = new CountDownLatch(1);
+        Future<Integer> first = pool.submit(() -> updateAfter(start, id));
+        Future<Integer> second = pool.submit(() -> updateAfter(start, id));
+        start.countDown();
+        assertEquals(1, first.get() + second.get());
+        assertEquals(0, transactions.execute(status -> packages.findById(id).orElseThrow().getStock()).intValue());
+        pool.shutdownNow();
+    }
+
+    private int updateAfter(CountDownLatch start, Long id) throws InterruptedException {
+        start.await();
+        return transactions.execute(status -> packages.decrementStockAndIncrementSales(id));
+    }
+    private PackageGroup newPackage() {
+        PackageGroup value = new PackageGroup(); value.setTitle("test"); value.setDescription("test"); value.setPrice(new BigDecimal("10.00")); value.setSales(0); value.setMerchantId(1L); value.setStock(1); return value;
+    }
+}

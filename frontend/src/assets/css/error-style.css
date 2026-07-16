@@ -1,0 +1,145 @@
+/* 震动动画 */
+.shake {
+    animation: shake 0.5s;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+@keyframes shake {
+    10%, 90% {
+        transform: translateX(-2px);
+    }
+    20%, 80% {
+        transform: translateX(3px);
+    }
+    30%, 50%, 70% {
+        transform: translateX(-5px);
+    }
+    40%, 60% {
+        transform: translateX(5px);
+    }
+}
+
+/* 错误提示样式 */
+.error-message {
+    color: #ff4d4f !important;
+    font-weight: 500;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.error-message::before {
+    content: '\f071';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    font-size: 0.8rem;
+}
+
+.input-error {
+    border-color: #ff4d4f !important;
+    background: #fff1f0 !important;
+    box-shadow: 0 0 0 4px rgba(255, 77, 79, 0.1) !important;
+}
+
+.password-error,
+.captcha-error,
+.validUsername-text {
+    font-size: 0.85rem;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #ff4d4f;
+}
+
+.success-message {
+    color: #52c41a !important;
+}
+
+.success-message::before {
+    content: '\f00c';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    font-size: 0.8rem;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.fade-enter,
+.fade-leave-to {
+    opacity: 0;
+    transform: translateY(-5px);
+}
+
+/* 验证码错误特殊定位 */
+.captcha-item {
+    position: relative;
+}
+
+.captcha-error {
+    position: absolute;
+    bottom: -20px;
+    left: 0;
+}
+
+.error-tip {
+    margin-top: 8px;
+    color: #ff4d4f;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.error-tip i {
+    font-size: 0.8rem;
+}
+
+.validUsername-text {
+    font-size: 0.85rem;
+    margin-top: 6px;
+    animation: fadeIn 0.3s ease;
+}
+
+.validUsername-text:not(:empty) {
+    padding: 4px 0;
+}
+
+.validUsername-text[data-valid="true"] {
+    color: #52c41a;
+}
+
+.validUsername-text[data-valid="false"] {
+    color: #ff4d4f;
+}
+
+/* 关键元素的弹出动画 */
+@keyframes popIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    70% {
+        transform: scale(1.05);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.captcha-img, .submit-btn {
+    animation: popIn 0.4s ease-out;
+}
+
+/* 输入框聚焦时的错误状态 */
+input:focus.input-error {
+    border-color: #ff4d4f !important;
+    box-shadow: 0 0 0 4px rgba(255, 77, 79, 0.15) !important;
+}
