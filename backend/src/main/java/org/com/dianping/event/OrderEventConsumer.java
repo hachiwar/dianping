@@ -9,8 +9,11 @@ import com.rabbitmq.client.Channel;
 import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 @Component
 public class OrderEventConsumer {
+ private static final Logger log = LoggerFactory.getLogger(OrderEventConsumer.class);
  private final ProcessedMessageRepository processed;
  private final TransactionTemplate transactions;
  public OrderEventConsumer(ProcessedMessageRepository processed, PlatformTransactionManager transactionManager) {
@@ -27,7 +30,9 @@ public class OrderEventConsumer {
        channel.basicAck(deliveryTag, false);
        return;
      } catch (RuntimeException ex) {
-       if (attempt == 3) channel.basicNack(deliveryTag, false, false);
+       if (attempt == 3) { log.warn("message sent to dead letter queue after retries: {}", ex.toString()); channel.basicNack(deliveryTag, false, false); return; }
+       try { Thread.sleep(100L * (1L << (attempt - 1))); }
+       catch (InterruptedException interrupted) { Thread.currentThread().interrupt(); channel.basicNack(deliveryTag, false, false); return; }
      }
    }
  }
