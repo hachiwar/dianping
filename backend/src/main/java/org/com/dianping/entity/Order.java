@@ -19,7 +19,7 @@ public class Order {
     @Column(nullable = false, precision = 19, scale = 2) private BigDecimal originalPrice;
     @Column(name = "best_coupon_id") private Long bestCouponId;
     @Column(nullable = false, precision = 19, scale = 2) private BigDecimal finalPrice;
-    @Column(name = "voucher_code", nullable = false, length = 32) private String voucherCode;
+    @Column(name = "voucher_code", length = 32) private String voucherCode;
     @Column(name = "business_no", nullable = false, length = 32) private String businessNo;
     @Column(name = "idempotency_key", nullable = false, length = 64) private String idempotencyKey;
     @Column(nullable = false) private String status;
@@ -32,6 +32,8 @@ public class Order {
     public String getBusinessNo() { return businessNo; }
     public String getIdempotencyKey() { return idempotencyKey; }
     public BigDecimal getFinalPrice() { return finalPrice; }
+    public LocalDateTime getCreateTime() { return createTime; }
+    public String getStatus() { return status; }
     public void setUserId(Long value) { userId = value; }
     public void setPackageId(Long value) { packageId = value; }
     public void setCreateTime(LocalDateTime value) { createTime = value; }

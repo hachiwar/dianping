@@ -5,7 +5,8 @@ import java.time.LocalDateTime;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "coupon")
+@Table(name = "coupon", uniqueConstraints =
+        @UniqueConstraint(name = "uk_coupon_user_source", columnNames = {"user_id", "source"}))
 public class Coupon {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
     @Column(nullable = false) private String couponName;
@@ -18,6 +19,7 @@ public class Coupon {
     @Column(precision = 19, scale = 2) private BigDecimal maxAmount;
     @Column(precision = 19, scale = 2) private BigDecimal minAmount;
     private LocalDateTime expireTime;
+    @Column(length = 32) private String source;
     public Long getId() { return id; } public void setId(Long v) { id = v; }
     public String getCouponName() { return couponName; } public void setCouponName(String v) { couponName = v; }
     public Long getUserId() { return userId; } public void setUserId(Long v) { userId = v; }
@@ -30,4 +32,5 @@ public class Coupon {
     public void setMiniAmount(BigDecimal v) { minAmount = v; }
     public BigDecimal getMaxAmount() { return maxAmount; } public void setMaxAmount(BigDecimal v) { maxAmount = v; }
     public LocalDateTime getExpireTime() { return expireTime; } public void setExpireTime(LocalDateTime v) { expireTime = v; }
+    public String getSource() { return source; } public void setSource(String v) { source = v; }
 }

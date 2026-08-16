@@ -26,6 +26,11 @@
         <i class="fas fa-user-plus"></i>
         <span>我的邀请</span>
       </div>
+
+      <div class="feature-card" @click="$router.push('/my-notifications')">
+        <i class="fas fa-bell"></i>
+        <span>订单通知</span>
+      </div>
       
       <div v-if="!hasOrders" class="feature-card new-user-card" @click="$router.push('/new-user-coupons')">
         <i class="fas fa-gift"></i>
@@ -86,8 +91,9 @@ export default {
     }
   },
   methods: {
-    handleLogout() {
+    async handleLogout() {
       if (confirm('确定要退出登录吗？')) {
+        try { await axios.post('/logout') } catch (error) { console.error('退出登录失败:', error) }
         localStorage.removeItem('userInfo')
         this.$router.push('/auth')
       }
@@ -102,7 +108,7 @@ export default {
             'UserId': this.userInfo.id
           }
         });
-        this.hasOrders = response.data.hasOrders;
+        this.hasOrders = response.data === true;
       } catch (error) {
         console.error('检查用户订单失败:', error);
         this.hasOrders = false;

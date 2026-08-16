@@ -158,7 +158,6 @@
 
 <script>
 import axios from 'axios';
-import { NULL } from 'sass';
 
 export default {
   data() {
@@ -191,7 +190,8 @@ export default {
       invitationCode: '',
       invitationMessage: '',
       invitationError: false,
-      invitationValid: false
+      invitationValid: false,
+      idempotencyKey: null
     }
   },
   computed: {
@@ -249,7 +249,7 @@ export default {
 
         // 处理图片URL
         if (this.packageData.imageUrl && !this.packageData.imageUrl.startsWith('http')) {
-          this.packageData.imageUrl = `http://localhost:8080${this.packageData.imageUrl}`;
+          this.packageData.imageUrl = this.packageData.imageUrl;
         }
       } catch (error) {
         console.error('获取套餐详情失败:', error);
@@ -478,6 +478,7 @@ export default {
       this.submitting = true;
 
       try {
+        this.idempotencyKey ||= window.crypto.randomUUID();
         const orderData = {
           packageId: this.packageId,
           packagePrice: this.packageData.price,
@@ -485,7 +486,8 @@ export default {
           couponId: this.selectedCoupon ? this.selectedCoupon.id : null,
           discount: this.discount,
           finalPrice: this.finalPrice,
-          invitationCode: this.invitationValid ? this.invitationCode : null
+          invitationCode: this.invitationValid ? this.invitationCode : null,
+          idempotencyKey: this.idempotencyKey
         };
 
         console.log('提交的订单数据:', orderData); // 添加日志

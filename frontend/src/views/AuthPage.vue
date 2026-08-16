@@ -198,7 +198,7 @@ export default {
   data() {
     return {
       isLogin: true,
-      captchaUrl: 'http://localhost:8080/captcha?' + Date.now(),
+      captchaUrl: '/captcha?' + Date.now(),
       passwordError: '',
       validCaptcha: false,
       captchaError: '',
@@ -580,7 +580,7 @@ export default {
     }
     ,
     refreshCaptcha() {
-      this.captchaUrl = 'http://localhost:8080/captcha?' + Date.now();
+      this.captchaUrl = '/captcha?' + Date.now();
     }
     ,
   }

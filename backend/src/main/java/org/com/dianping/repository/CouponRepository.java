@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 
 public interface CouponRepository extends JpaRepository<Coupon, Long> {
+    boolean existsByUserIdAndSource(Long userId, String source);
     // 根据ID和用户ID查询优惠券
     Optional<Coupon> findByIdAndUserId(Long couponId, Long userId);
     

@@ -4,8 +4,11 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.time.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.com.dianping.DTO.OrderResponse;
 import org.com.dianping.entity.Coupon;
 import org.com.dianping.entity.Merchant;
@@ -28,26 +31,27 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 @Service
 public class OrderService {
-    private static final BigDecimal TEN = new BigDecimal("10.00");
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
     private final OrderRepository orderRepository;
     private final PackageGroupRepository packageRepository;
     private final CouponRepository couponRepository;
     private final CouponService couponService;
     private final MerchantRepository merchantRepository;
     private final UserRepository userRepository;
-    private final InvitationService invitationService;
     private final ApplicationEventPublisher events;
     private final StringRedisTemplate redis;
     private final OutboxService outbox;
+    private final RedisLockService locks;
 
     public OrderService(OrderRepository orderRepository, PackageGroupRepository packageRepository,
                         CouponRepository couponRepository, CouponService couponService,
                         MerchantRepository merchantRepository, UserRepository userRepository,
-                        InvitationService invitationService, ApplicationEventPublisher events, StringRedisTemplate redis, OutboxService outbox) {
+                        ApplicationEventPublisher events, StringRedisTemplate redis,
+                        OutboxService outbox, RedisLockService locks) {
         this.orderRepository = orderRepository; this.packageRepository = packageRepository;
         this.couponRepository = couponRepository; this.couponService = couponService;
         this.merchantRepository = merchantRepository; this.userRepository = userRepository;
-        this.invitationService = invitationService; this.events = events; this.redis = redis; this.outbox = outbox;
+        this.events = events; this.redis = redis; this.outbox = outbox; this.locks = locks;
     }
 
     @Transactional
@@ -56,45 +60,52 @@ public class OrderService {
         var existing = orderRepository.findByUserIdAndIdempotencyKey(userId, idempotencyKey);
         if (existing.isPresent()) return existing.get();
         String idempotencyRedisKey = "order:idempotency:" + userId + ":" + idempotencyKey;
-        Boolean acquired = null;
-        try { acquired = redis.opsForValue().setIfAbsent(idempotencyRedisKey, "PROCESSING", Duration.ofHours(24)); } catch (RuntimeException ignored) { }
-        if (Boolean.FALSE.equals(acquired)) return orderRepository.findByUserIdAndIdempotencyKey(userId, idempotencyKey).orElseThrow(() -> new IllegalStateException("请求处理中，请重试"));
-        if (Boolean.TRUE.equals(acquired)) TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override public void afterCompletion(int status) { if (status != STATUS_COMMITTED) try { redis.delete(idempotencyRedisKey); } catch (RuntimeException ignored) { } }
-        });
+        String lockKey = "lock:" + idempotencyRedisKey;
+        Optional<String> lock = Optional.empty();
+        boolean lockAvailable = true;
+        try { lock = locks.tryAcquire(lockKey, Duration.ofSeconds(30)); }
+        catch (RuntimeException ex) { lockAvailable = false; log.warn("redis lock unavailable, relying on database idempotency key={}", lockKey); }
+        if (lockAvailable && lock.isEmpty()) return orderRepository.findByUserIdAndIdempotencyKey(userId, idempotencyKey)
+                .orElseThrow(() -> new IllegalStateException("请求处理中，请重试"));
+        lock.ifPresent(owner -> TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override public void afterCompletion(int status) { locks.release(lockKey, owner); }
+        }));
         PackageGroup pkg = packageRepository.findById(packageId).orElseThrow(() -> new IllegalArgumentException("套餐不存在"));
         Merchant merchant = merchantRepository.findById(merchantId).orElseThrow(() -> new IllegalArgumentException("商家不存在"));
         if (!pkg.getMerchantId().equals(merchantId)) throw new IllegalArgumentException("套餐不属于该商家");
         BigDecimal price = money(pkg.getPrice());
         UsedCoupon used = calculateBestPrice(price, couponRepository.findValidCouponsByUserIdAndMerchant(userId, merchant.getCategory(), merchantId, price));
-        if (packageRepository.decrementStockAndIncrementSales(packageId) != 1) throw new IllegalStateException("套餐库存不足");
+        if (packageRepository.decrementStockAndIncrementSales(packageId, pkg.getVersion()) != 1)
+            throw new IllegalStateException("套餐已更新或库存不足，请重试");
         if (used.coupon() != null && !couponService.claimCoupon(used.coupon().getId())) throw new IllegalStateException("优惠券已使用");
         Order order = new Order();
         order.setUserId(userId); order.setPackageId(packageId); order.setCreateTime(LocalDateTime.now());
         order.setBusinessName(merchant.getMerchantName()); order.setOriginalPrice(price); order.setBestCoupon(used.coupon() == null ? null : used.coupon().getId());
         order.setFinalPrice(money(price.subtract(used.discount()).max(BigDecimal.ZERO)));
-        order.setVoucherCode(UUID.randomUUID().toString().replace("-", ""));
         order.setBusinessNo("DP" + UUID.randomUUID().toString().replace("-", "").substring(0, 20));
         order.setIdempotencyKey(idempotencyKey); order.setStatus("未使用");
         Order saved = orderRepository.saveAndFlush(order);
-        try { redis.opsForValue().set(idempotencyRedisKey, saved.getId().toString(), Duration.ofHours(24)); } catch (RuntimeException ignored) { }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override public void afterCommit() {
+                try { redis.opsForValue().set(idempotencyRedisKey, saved.getId().toString(), Duration.ofHours(24)); }
+                catch (RuntimeException ex) { log.warn("order idempotency result cache failed key={}", idempotencyRedisKey); }
+            }
+        });
         User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("用户不存在"));
         user.setOrderCount(user.getOrderCount() + 1);
         userRepository.save(user);
-        if (invitationCode != null && !invitationCode.isBlank()) bindInvitation(user, invitationCode, saved.getFinalPrice());
-        else if (user.getInviterId() != null) invitationService.processInvitationReward(user.getInviterId(), userId, saved.getFinalPrice());
+        if (invitationCode != null && !invitationCode.isBlank()) bindInvitation(user, invitationCode);
         OrderCreated event = OrderCreated.of(saved.getId());
         outbox.record(event);
         events.publishEvent(event);
         return saved;
     }
 
-    private void bindInvitation(User user, String code, BigDecimal amount) {
+    private void bindInvitation(User user, String code) {
         if (user.getInviterId() != null) throw new IllegalArgumentException("已经使用过邀请码");
         User inviter = userRepository.findByInvitationCode(code).orElseThrow(() -> new IllegalArgumentException("无效的邀请码"));
         if (inviter.getId().equals(user.getId())) throw new IllegalArgumentException("不能使用自己的邀请码");
         user.setInviterId(inviter.getId()); userRepository.save(user);
-        if (amount.compareTo(TEN) > 0) invitationService.processInvitationReward(inviter.getId(), user.getId(), amount);
     }
 
     public Order findByIdempotencyKey(Long userId, String key) { return orderRepository.findByUserIdAndIdempotencyKey(userId, key).orElseThrow(); }

@@ -116,7 +116,7 @@ export default {
         
         // 如果图片没有完整URL，添加前缀
         if (this.packageData.imageUrl && !this.packageData.imageUrl.startsWith('http')) {
-          this.packageData.imageUrl = `http://localhost:8080${this.packageData.imageUrl}`;
+          this.packageData.imageUrl = this.packageData.imageUrl;
         }
       } catch (error) {
         console.error('获取套餐详情失败:', error);

@@ -4,10 +4,10 @@
       <i class="fas fa-arrow-left"></i> 返回
     </div>
     <div class="qr-section">
-      <div class="qr-code">
+      <div v-if="couponCode" class="qr-code">
         <qrcode-vue :value="couponCode" :size="200" />
       </div>
-      <p class="qr-instruction">请出示此二维码以使用优惠券</p>
+      <p class="qr-instruction">{{ couponCode ? '请出示此二维码以使用优惠券' : '券码生成中，请稍候……' }}</p>
     </div>
   </div>
 </template>
@@ -25,14 +25,17 @@ export default {
     };
   },
   async mounted() {
-    this.orderId = this.$route.params.id;
-    await this.fetchOrderDetails();
+    this.orderId = this.$route.params.orderId;
+    await this.fetchOrderDetails(10);
   },
   methods: {
-    async fetchOrderDetails() {
+    async fetchOrderDetails(remaining) {
       try {
         const response = await axios.get(`/api/orders/${this.orderId}`);
         this.couponCode = response.data.couponCode;
+        if (!this.couponCode && remaining > 1) {
+          setTimeout(() => this.fetchOrderDetails(remaining - 1), 500);
+        }
       } catch (error) {
         console.error('获取订单详情失败:', error);
       }

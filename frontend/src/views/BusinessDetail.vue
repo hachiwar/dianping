@@ -234,7 +234,7 @@ export default {
   computed: {
     // 处理封面图路径
     coverImage() {
-      return `http://localhost:8080${this.business.coverUrl}`
+      return this.business.coverUrl
     },
     // 处理详情图路径
     processedPhotos() {
@@ -248,7 +248,7 @@ export default {
         const trimmedUrl = url.trim();
         return trimmedUrl.startsWith('http')
             ? trimmedUrl
-            : `http://localhost:8080${trimmedUrl}`;
+            : trimmedUrl;
       });
     },
     // 筛选顶级评论（没有父评论的评论）
@@ -343,7 +343,7 @@ export default {
         this.packages = response.data;
         this.packages.forEach(pkg => {
           if (pkg.imageUrl && !pkg.imageUrl.startsWith('http')) {
-            pkg.imageUrl = `http://localhost:8080${pkg.imageUrl}`;
+            pkg.imageUrl = pkg.imageUrl;
           }
         });
 

@@ -2,6 +2,7 @@ package org.com.dianping.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.ArrayList;
 
 import org.com.dianping.entity.Merchant;
 import org.com.dianping.repository.MerchantRepository;
@@ -77,7 +78,7 @@ public class MerchantService {
         }
 
         // 去重
-        results = results.stream().distinct().toList();
+        results = new ArrayList<>(results.stream().distinct().toList());
 
         // 应用排序
         if (sortType != null) {

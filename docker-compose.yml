@@ -26,6 +26,7 @@ services:
       REDIS_HOST: redis
       RABBITMQ_HOST: rabbitmq
       JPA_DDL_AUTO: update
+      DEMO_DATA_ENABLED: "true"
     depends_on:
       mysql:
         condition: service_healthy
@@ -52,12 +53,11 @@ services:
       backend-1:
         condition: service_healthy
   nginx:
-    image: nginx:alpine
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
     ports:
       - "8080:80"
-    volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./frontend/dist:/usr/share/nginx/html:ro
     depends_on:
       - backend-1
       - backend-2

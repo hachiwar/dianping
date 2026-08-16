@@ -321,7 +321,7 @@ export default {
           avgPrice: item.avgPrice,
           address: item.address,
           businessHours: item.businessHours,
-          image: item.coverUrl ? `http://localhost:8080${item.coverUrl}` :
+          image: item.coverUrl ? item.coverUrl :
               '/placeholder.jpg',
           phone: item.telephone,
           description: item.description

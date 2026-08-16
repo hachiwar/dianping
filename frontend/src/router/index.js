@@ -5,7 +5,6 @@ import BusinessDetail from "@/views/BusinessDetail.vue";
 import UserInfo from "@/views/UserInfo.vue";
 import NearbyFood from '@/views/NearbyFood.vue'
 import LifeZone from '@/views/LifeZone.vue'
-import My from '@/views/My.vue'
 import PackageDetail from '@/views/PackageDetail.vue'
 import OrderConfirmation from '@/views/OrderConfirmation.vue'
 import CouponCode from '@/views/CouponCode.vue'
@@ -93,6 +92,12 @@ const routes = [
         path: '/my-invitation',
         name: 'MyInvitation',
         component: () => import('@/views/MyInvitation.vue'),
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/my-notifications',
+        name: 'MyNotifications',
+        component: () => import('@/views/MyNotifications.vue'),
         meta: { requiresAuth: true }
     }
 ]

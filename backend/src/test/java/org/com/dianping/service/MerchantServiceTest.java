@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.List;
 import org.com.dianping.entity.Merchant;
 import org.com.dianping.observability.PlatformMetrics;
 import org.com.dianping.repository.MerchantRepository;
@@ -32,5 +33,13 @@ class MerchantServiceTest {
         when(redis.opsForValue()).thenReturn(values); when(values.get(anyString())).thenThrow(new RuntimeException("redis down")); when(repository.findById(1L)).thenReturn(Optional.empty());
         assertTrue(new MerchantService(repository, redis, new ObjectMapper(), new DatabaseFallbackLimiter(), metrics).getMerchantById(1L).isEmpty());
         verify(metrics).cache("merchant", "fallback");
+    }
+    @Test void sortsSearchResultsReturnedAsAnImmutableList() {
+        MerchantRepository repository = mock(MerchantRepository.class);
+        Merchant cheaper = new Merchant(); cheaper.setAvgPrice(20f);
+        Merchant expensive = new Merchant(); expensive.setAvgPrice(80f);
+        when(repository.searchMerchantsWithPinyin(null, null, null, null)).thenReturn(List.of(expensive, cheaper));
+        var service = new MerchantService(repository, mock(StringRedisTemplate.class), new ObjectMapper(), new DatabaseFallbackLimiter(), mock(PlatformMetrics.class));
+        assertEquals(List.of(cheaper, expensive), service.getMerchants(null, null, null, null, "price_asc"));
     }
 }

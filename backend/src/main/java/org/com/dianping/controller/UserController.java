@@ -69,7 +69,9 @@ public class UserController {
             throw new RuntimeException("密码格式不合法");
         }
         session.removeAttribute("CAPTCHA_CODE");
-        return userService.registerUser(request);
+        UserResponse response = userService.registerUser(request);
+        session.setAttribute("USER_SESSION", response);
+        return response;
     }
 
  

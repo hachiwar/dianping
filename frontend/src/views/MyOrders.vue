@@ -103,13 +103,10 @@ export default {
       return `${year}-${month}-${day} ${hours}:${minutes}`;
     },
     getOrderStatus(order) {
-      // 这里可以根据实际业务扩展更多状态
-      return '未使用';
+      return order.status;
     },
     getStatusClass(order) {
-      // 根据订单状态返回对应的样式类名
-      // 这里简单处理，实际应根据业务返回不同状态
-      return 'status-unused';
+      return order.status === '未使用' ? 'status-unused' : '';
     },
     goToOrderDetail(orderId) {
       this.$router.push(`/coupon-code/${orderId}`);

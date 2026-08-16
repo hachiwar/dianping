@@ -19,20 +19,22 @@ class PackageGroupRepositoryConcurrencyTest {
     @Test
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void onlyOneConcurrentPurchaseCanConsumeTheLastStock() throws Exception {
-        Long id = transactions.execute(status -> packages.saveAndFlush(newPackage()).getId());
+        PackageGroup saved = transactions.execute(status -> packages.saveAndFlush(newPackage()));
+        Long id = saved.getId(); Long version = saved.getVersion();
         ExecutorService pool = Executors.newFixedThreadPool(2);
         CountDownLatch start = new CountDownLatch(1);
-        Future<Integer> first = pool.submit(() -> updateAfter(start, id));
-        Future<Integer> second = pool.submit(() -> updateAfter(start, id));
+        Future<Integer> first = pool.submit(() -> updateAfter(start, id, version));
+        Future<Integer> second = pool.submit(() -> updateAfter(start, id, version));
         start.countDown();
         assertEquals(1, first.get() + second.get());
         assertEquals(0, transactions.execute(status -> packages.findById(id).orElseThrow().getStock()).intValue());
+        assertEquals(Long.valueOf(version + 1), transactions.<Long>execute(status -> packages.findById(id).orElseThrow().getVersion()));
         pool.shutdownNow();
     }
 
-    private int updateAfter(CountDownLatch start, Long id) throws InterruptedException {
+    private int updateAfter(CountDownLatch start, Long id, Long version) throws InterruptedException {
         start.await();
-        return transactions.execute(status -> packages.decrementStockAndIncrementSales(id));
+        return transactions.execute(status -> packages.decrementStockAndIncrementSales(id, version));
     }
     private PackageGroup newPackage() {
         PackageGroup value = new PackageGroup(); value.setTitle("test"); value.setDescription("test"); value.setPrice(new BigDecimal("10.00")); value.setSales(0); value.setMerchantId(1L); value.setStock(1); return value;

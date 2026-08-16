@@ -66,8 +66,8 @@ export default {
           .catch(err => console.error('复制失败:', err));
     },
     fetchInvitationRecords() {
-      // Replace with actual API call
-      fetch('http://localhost:8080/api/invitation-records', {
+      fetch('/api/invitation-records', {
+        credentials: 'include',
         headers: {
           Authorization: `Bearer ${this.userInfo.token}`,
           'UserId': this.userInfo.id.toString()  // 添加 UserId 请求头
@@ -91,8 +91,8 @@ export default {
           .catch(err => console.error('获取邀请记录失败:', err));
     },
     fetchRewardCoupons() {
-      // Replace with actual API call
-      fetch('http://localhost:8080/api/reward-coupons', {
+      fetch('/api/reward-coupons', {
+        credentials: 'include',
         headers: {
           Authorization: `Bearer ${this.userInfo.token}`,
           'UserId': this.userInfo.id  // 添加 UserId 请求头
