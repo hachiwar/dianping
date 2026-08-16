@@ -46,7 +46,7 @@ flowchart LR
 环境要求：Docker Desktop 或 Docker Engine，以及 Docker Compose v2。
 
 ```bash
-git clone https://github.com/coder-shx/dianping.git
+git clone https://github.com/hachiwar/dianping.git
 cd dianping
 cp .env.example .env
 docker compose up --build -d
